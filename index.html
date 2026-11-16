@@ -38,10 +38,10 @@ main{margin-left:238px;padding:18px}.bnav{display:none}
 <script type="module">
 import {createClient} from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js/+esm';
 // ===== KONFIGURASI APLIKASI =====
-const IS_PREVIEW = false; // Ubah menjadi false SAAT DEPLOY agar mode preview & data dummy hilang dan terhubung 100% ke Supabase
-const SUPABASE_URL = "https://yxgepmxgwvcblrrhckus.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_gAO8G4Hm634KtDlnZDoRag_gmGjOnfj";
-const TEMPLATE_URL = "https://docs.google.com/document/d/1ZiWk-n4Kz8W2jOWDZAfcPFgsX0LICIzm/edit?usp=sharing&ouid=107856581458706219784&rtpof=true&sd=true"; // (opsional) link unduh Template_Soal_CBT.docx yang Anda unggah ke Google Drive/hosting
+const IS_PREVIEW = true; // Ubah menjadi false SAAT DEPLOY agar mode preview & data dummy hilang dan terhubung 100% ke Supabase
+const SUPABASE_URL = "URL_SUPABASE_ANDA";
+const SUPABASE_ANON_KEY = "ANON_KEY_ANDA";
+const TEMPLATE_URL = ""; // (opsional) link unduh Template_Soal_CBT.docx yang Anda unggah ke Google Drive/hosting
 const sb = IS_PREVIEW ? null : createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 // ===== UTIL =====
@@ -95,6 +95,7 @@ const T={
  async all(t,sel='*',ord='created_at',asc=false){if(IS_PREVIEW)return M[t].slice();const r=await sb.from(t).select(sel).order(ord,{ascending:asc});if(r.error)throw r.error;return r.data},
  async put(t,o){if(IS_PREVIEW){const i=M[t].findIndex(x=>x.id==o.id);i<0?M[t].unshift(o):M[t][i]={...M[t][i],...o};return o}const r=await sb.from(t).upsert(o).select().single();if(r.error)throw r.error;return r.data},
  async delWhere(t,col,v){if(IS_PREVIEW){M[t]=M[t].filter(x=>x[col]!=v);return}const r=await sb.from(t).delete().eq(col,v);if(r.error)throw r.error},
+ async delIds(t,ids){if(IS_PREVIEW){const q=new Set(ids);M[t]=M[t].filter(x=>!q.has(x.id));return}for(let i=0;i<ids.length;i+=100){const r=await sb.from(t).delete().in('id',ids.slice(i,i+100));if(r.error)throw r.error}},
  async del(t,id){if(IS_PREVIEW){M[t]=M[t].filter(x=>x.id!=id);return}const r=await sb.from(t).delete().eq('id',id);if(r.error)throw r.error}};
 const Q={
  async saveSoal(o,k){if(IS_PREVIEW)return T.put('soal',{...o,kunci_soal:{kunci:k}});await T.put('soal',o);await T.put('kunci_soal',{soal_id:o.id,kunci:k})},
@@ -131,7 +132,7 @@ const MENU=[['dash','🏠','Dashboard'],['soal','📚','Bank Soal'],['ujian','�
 const menu=()=>MENU.filter(m=>ROLE=='admin'||m[0]=='soal'||m[0]=='hasil');
 const MS={siswa:{t:'Data Siswa',f:[['no_absen','No. Absen'],['username','NISN/Username'],['nama','Nama Siswa'],['jk','Jenis Kelamin'],['kelas','Kelas'],['ruang','Ruang Ujian'],['password','Password']]},guru:{t:'Akun Guru',f:[['email','Email'],['nama','Nama'],['mapel','Mapel'],['password','Password']]}};
 let V='dash',ROLE='',MAPEL='',KF='',SF='',SETF=null,CFG={nama_ujian:'CBT Pro',nama_sekolah:'',logo_url:''},ADMIN=0,POLL=null,EX=null,TOK=null,ED=null,SOAL=[],UJ=[],SL=[],ML={},HF='',HR=[];
-const shell=c=>R(`<div class="side g"><div style="margin:4px 8px 12px;text-align:center">${logo(40)}<h3 style="margin:4px 0 0">${esc(CFG.nama_ujian||'CBT Pro')}</h3><small>${esc(CFG.nama_sekolah)}</small></div>${menu().map(m=>`<div class="nv ${V==m[0]?'on':''}" data-a="go" data-v="${m[0]}">${m[1]} ${m[2]}</div>`).join('')}<div style="flex:1"></div><div class="nv" data-a="out">🚪 Keluar</div></div>
+const shell=c=>R(`<div class="side g"><div style="margin:4px 8px 12px;text-align:center">${logo(40)}<h3 style="margin:4px 0 0">${esc(CFG.nama_ujian||'CBT Pro')}</h3><small>${esc(CFG.nama_sekolah)}</small></div>${menu().map(m=>`<div class="nv ${V==m[0]?'on':''}" data-a="go" data-v="${m[0]}">${m[1]} ${m[2]}</div>`).join('')}<div class="nv" data-a="out" style="margin-top:6px">🚪 Keluar</div></div>
 <div class="bnav g">${menu().map(m=>`<div class="nv ${V==m[0]?'on':''}" data-a="go" data-v="${m[0]}" title="${m[2]}">${m[1]}</div>`).join('')}<div class="nv" data-a="out">🚪</div></div>
 <main>${IS_PREVIEW?'<div class="pv">Mode Preview Aktif</div>':''}<small>👤 ${ROLE==='admin'?'Admin':'Guru · '+esc(MAPEL)}</small>${c}</main>`);
 function enter(p){ROLE=p.role;MAPEL=p.mapel||'';ADMIN=1;V=ROLE=='admin'?'dash':'soal';render()}
@@ -177,7 +178,7 @@ function linked(L,st,gk=x=>x.kelas,gr=x=>x.ruang){
  return{ko,ro,rows:L.filter(x=>mk(st.k,gk(x))&&mk(st.r,gr(x)))}}
 const fsel=(p,f,label,o,cur)=>`<select data-a="fSel" data-p="${p}" data-f="${f}" style="width:auto;margin:0"><option value="">${label}</option>${o.list.map(v=>`<option value="${esc(v)}" ${v==cur?'selected':''}>${esc(v)}</option>`).join('')}${o.empty?`<option value="${KOS}" ${cur==KOS?'selected':''}>(kosong)</option>`:''}</select>`;
 async function master(t){const c=MS[t];let L;if(t=='guru')L=IS_PREVIEW?await T.all('guru'):(await T.all('profil','*','nama',true)).filter(r=>r.role=='guru');else L=await T.all(t,'id,username,nama,kelas,ruang,no_absen,jk,aktif,login_aktif','nama',true);ML[t]=L;const cols=c.f.filter(f=>f[0]!='password');const fl=t=='siswa'?linked(L,FS.siswa):null,LL=fl?[...fl.rows].sort((a,b)=>cmpId(a.kelas,b.kelas)||((a.no_absen==null?1e9:+a.no_absen)-(b.no_absen==null?1e9:+b.no_absen))||cmpId(a.nama,b.nama)):L;
- return `<h2>${c.t}</h2><div class="bar"><button data-a="mEdit" data-t="${t}">+ Tambah</button><label class="b b2">⬆ Import XLS<input type="file" accept=".xls,.xlsx" hidden data-a="mImp" data-t="${t}"></label><button class="b2" data-a="mTpl" data-t="${t}">⬇ Template XLS</button>${fl?fsel('siswa','k','Semua kelas',fl.ko,FS.siswa.k)+fsel('siswa','r','Semua ruang',fl.ro,FS.siswa.r)+'<small>'+LL.length+' dari '+L.length+' siswa</small>':''}</div>
+ return `<h2>${c.t}</h2><div class="bar"><button data-a="mEdit" data-t="${t}">+ Tambah</button><label class="b b2">⬆ Import XLS<input type="file" accept=".xls,.xlsx" hidden data-a="mImp" data-t="${t}"></label><button class="b2" data-a="mTpl" data-t="${t}">⬇ Template XLS</button>${fl?fsel('siswa','k','Semua kelas',fl.ko,FS.siswa.k)+fsel('siswa','r','Semua ruang',fl.ro,FS.siswa.r)+'<small>'+LL.length+' dari '+L.length+' siswa</small>'+(LL.length?'<button class="bd" data-a="siswaHapusSemua">🗑 '+((FS.siswa.k||FS.siswa.r)?'Hapus '+LL.length+' Siswa Terfilter':'Hapus Semua Siswa')+'</button>':''):''}</div>
  <div class="g tw"><table><tr>${cols.map(f=>`<th>${f[1]}</th>`).join('')}${t=='siswa'?'<th>Login</th>':''}<th></th></tr>${LL.map(r=>`<tr>${cols.map(f=>`<td>${esc(r[f[0]])}</td>`).join('')}${t=='siswa'?`<td>${r.login_aktif?'<span class="bdg wr">aktif</span>':'-'}</td>`:''}<td><button class="b2" data-a="mEdit" data-t="${t}" data-id="${r.id}">Edit</button> ${t=='siswa'&&r.login_aktif?`<button class="by" data-a="reset" data-id="${r.id}">Reset Login</button> `:''}<button class="bd" data-a="del" data-t="${t}" data-id="${r.id}">Hapus</button></td></tr>`).join('')}</table>${empty(LL.length)}</div>`}
 
 // ===== FORM SOAL =====
@@ -265,6 +266,7 @@ const A={
  async cSave(){syncC();const o={nama_ujian:SETF.nama_ujian.trim()||'CBT Pro',nama_sekolah:SETF.nama_sekolah.trim(),logo_url:SETF.logo_url||null};const oldLogo=imgPaths([{gambar_url:CFG.logo_url}]);await Q.saveCfg(o);const nl=new Set(imgPaths([{gambar_url:o.logo_url}]));CFG={...CFG,...o};SETF=null;try{await rmImgs(oldLogo.filter(x=>!nl.has(x)))}catch(e){}toast('Pengaturan tersimpan');render()},
  kf(el){KF=el.value;render()},kAll(el){document.querySelectorAll('.ks').forEach(c=>c.checked=el.checked)},
  async kSet(el){const ids=[...document.querySelectorAll('.ks:checked')].map(c=>c.value),v=$('#kv').value.trim();if(!ids.length||!v)return toast('Pilih siswa dan isi nama kelas/ruang');await Q.kel(ids,el.dataset.g,v);toast(ids.length+' siswa diperbarui');render()},
+ async siswaHapusSemua(){const fr=linked(ML.siswa||[],FS.siswa).rows,k=FS.siswa.k,r=FS.siswa.r;if(!fr.length)return;const ket=(k||r)?fr.length+' siswa'+(k?' kelas '+(k==KOS?'(kosong)':k):'')+(r?' ruang '+(r==KOS?'(kosong)':r):''):'SEMUA '+fr.length+' siswa';if(!confirm('Hapus '+ket+'?\n\nHasil ujian dan data sesi milik siswa tersebut ikut terhapus permanen. Tindakan ini tidak bisa dibatalkan.'))return;if((prompt('Ketik HAPUS untuk melanjutkan:')||'').trim()!='HAPUS')return toast('Dibatalkan');await T.delIds('siswa',fr.map(x=>x.id));toast(fr.length+' siswa dihapus');render()},
  async stopSiswa(el){if(!confirm('Hentikan paksa ujian siswa ini?\n\nJawaban yang sudah tersinkron akan dinilai dan siswa langsung dikeluarkan dari ujian.'))return;const n=await Q.hentikan(el.dataset.id,null,false);toast(n?'Ujian siswa dihentikan':'Siswa sudah selesai');render()},
  async stopUjian(el){if(!confirm('HENTIKAN PAKSA ujian "'+el.dataset.j+'"?\n\n'+el.dataset.n+' peserta yang sedang mengerjakan akan dihentikan dan dinilai dari jawaban yang sudah tersinkron. Ujian juga dinonaktifkan agar tidak ada siswa baru yang masuk (aktifkan lagi lewat menu Ujian bila perlu).'))return;const c=await Q.hentikan(null,el.dataset.id,true);toast(c+' peserta dihentikan, ujian dinonaktifkan');render()},
  async izin(el){if(!confirm('Izinkan siswa ini mengirim jawaban sekarang?'))return;await Q.izin(el.dataset.id);toast('Izin kirim diberikan');render()},
