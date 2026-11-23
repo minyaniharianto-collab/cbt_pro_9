@@ -24,7 +24,7 @@ main{margin-left:238px;padding:18px}.bnav{display:none}
 #toast{position:fixed;top:14px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:10px 16px;border-radius:12px;z-index:20;display:none;max-width:92vw}
 .bdg{padding:2px 8px;border-radius:99px;background:#e2e8f0;font-size:12px}.ok{background:#dcfce7}.wr{background:#fef3c7}
 .ex{display:grid;grid-template-columns:1fr 290px;gap:14px;padding:14px;max-width:1200px;margin:auto}
-.opt{display:flex;gap:10px;align-items:flex-start;padding:10px;border:2px solid #e2e8f0;border-radius:12px;margin:8px 0;cursor:pointer;background:#fff}.opt.on{border-color:#2563eb;background:#eff6ff}
+.opt{display:flex;gap:10px;align-items:flex-start;padding:10px;border:2px solid #e2e8f0;border-radius:12px;margin:8px 0;cursor:pointer;background:#fff}.opt.on{border-color:#2563eb;background:#eff6ff}.rd,.ck{flex:none;width:22px;height:22px;border:2px solid #94a3b8;background:#fff;box-sizing:border-box;margin-top:0;display:inline-block;position:relative}.opt>b,.opt>div{line-height:22px}.rd{border-radius:50%}.ck{border-radius:6px}.opt.on .rd{border-color:#2563eb;background:radial-gradient(circle,#2563eb 0 42%,#fff 48%)}.opt.on .ck{border-color:#2563eb;background:#2563eb}.opt.on .ck::after{content:'';position:absolute;left:5px;top:0;width:6px;height:12px;border:solid #fff;border-width:0 3px 3px 0;transform:rotate(45deg)}
 .who{background:#eff6ff;border-radius:10px;padding:6px 10px;margin:0 0 8px;font-size:14px;line-height:1.4}.qi{max-width:100%;max-height:260px;display:block;margin:8px 0;border-radius:8px}
 .qn{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin:10px 0}
 .n{padding:8px 0;text-align:center;border-radius:8px;border:2px solid #e2e8f0;background:#fff;cursor:pointer;font-weight:700}.n.a{background:#dbeafe;border-color:#93c5fd}.n.r{background:#fde047;border-color:#eab308}.n.c{outline:3px solid #1e3a8a}
@@ -220,8 +220,8 @@ function ujForm(id){const u=UJ.find(x=>x.id==id)||{judul:'',mapel:'',izin_kirim_
 function pvOpen(){const q=SOAL.find(x=>x.id==PVQ);if(!q)return;const kc=q.kunci_soal,key=kc?(Array.isArray(kc)?(kc[0]||{}).kunci:kc.kunci):null,sk=PVK;
  const isK=k=>Array.isArray(key)?key.includes(k):key==k,ck=on=>sk&&on?'<b style="margin-left:auto;color:#16a34a">✓</b>':'',mk=(on,h)=>`<div class="opt" style="${sk&&on?'border-color:#16a34a;background:#dcfce7':''}">${h}</div>`;
  let body;
- if(q.tipe=='pg'||q.tipe=='pgk')body=(q.opsi||[]).map((o,j)=>mk(isK(o.k),`<b>${'ABCD'[j]}.</b><div>${esc(o.t)}${o.img?`<img class="qi" src="${esc(o.img)}">`:''}</div>${ck(isK(o.k))}`)).join('');
- else if(q.tipe=='bs')body=[['B','Benar'],['S','Salah']].map(([k,t])=>mk(key==k,`<b>${t}</b>${ck(key==k)}`)).join('');
+ if(q.tipe=='pg'||q.tipe=='pgk')body=(q.opsi||[]).map((o,j)=>mk(isK(o.k),`<span class="${q.tipe=='pgk'?'ck':'rd'}"></span><b>${'ABCD'[j]}.</b><div>${esc(o.t)}${o.img?`<img class="qi" src="${esc(o.img)}">`:''}</div>${ck(isK(o.k))}`)).join('');
+ else if(q.tipe=='bs')body=[['B','Benar'],['S','Salah']].map(([k,t])=>mk(key==k,`<span class="rd"></span><b>${t}</b>${ck(key==k)}`)).join('');
  else body=`<input placeholder="Ketik jawaban singkat..." disabled>${sk&&Array.isArray(key)?`<p><small>Kunci: <b>${key.map(esc).join(' | ')}</b></small></p>`:''}`;
  const nb='flex:1;padding:8px 4px;font-size:12px;pointer-events:none';
  modal(`<h3>Preview Soal</h3><small>Tampilan contoh di layar HP siswa (lebar 360 px). Bila ujian mengacak opsi, urutan opsi pada siswa dapat berbeda.</small>
@@ -358,8 +358,8 @@ function tick(){if(!EX)return;const l=EX.end-(Date.now()+EX.off);const s=Math.ma
  ['tm','tm2'].forEach(i=>{const e=$('#'+i);if(e)e.textContent=t});fixBtn();if(l<=0&&!EX.sub){toast('Waktu habis, jawaban dikumpulkan otomatis');finish(true)}else if(EX&&!EX.sub&&((EX.hb=(EX.hb||0)+1)>=8)&&!EX.chk){EX.hb=0;chkStatus()}}
 function paintNav(){document.querySelectorAll('.n').forEach(b=>{const q=EX.L[+b.dataset.i];b.className='n'+(EX.ans[q.id]!=null?' a':'')+(EX.ragu.has(q.id)?' r':'')+(+b.dataset.i==EX.i?' c':'')})}
 function drawEx(){const X=EX,q=X.L[X.i],a=X.ans[q.id];let body;
- if(q.tipe=='pg'||q.tipe=='pgk')body=q.opsi.map((o,j)=>{const on=q.tipe=='pg'?a==o.k:(a||[]).includes(o.k);return `<div class="opt ${on?'on':''}" data-a="pick" data-k="${o.k}"><b>${'ABCD'[j]}.</b><div>${esc(o.t)}${o.img?`<img class="qi" src="${esc(o.img)}">`:''}</div></div>`}).join('');
- else if(q.tipe=='bs')body=[['B','Benar'],['S','Salah']].map(([k,t])=>`<div class="opt ${a==k?'on':''}" data-a="pick" data-k="${k}"><b>${t}</b></div>`).join('');
+ if(q.tipe=='pg'||q.tipe=='pgk')body=q.opsi.map((o,j)=>{const on=q.tipe=='pg'?a==o.k:(a||[]).includes(o.k);return `<div class="opt ${on?'on':''}" data-a="pick" data-k="${o.k}"><span class="${q.tipe=='pgk'?'ck':'rd'}"></span><b>${'ABCD'[j]}.</b><div>${esc(o.t)}${o.img?`<img class="qi" src="${esc(o.img)}">`:''}</div></div>`}).join('');
+ else if(q.tipe=='bs')body=[['B','Benar'],['S','Salah']].map(([k,t])=>`<div class="opt ${a==k?'on':''}" data-a="pick" data-k="${k}"><span class="rd"></span><b>${t}</b></div>`).join('');
  else body=`<input id="isi" placeholder="Ketik jawaban singkat..." value="${esc(a||'')}" autocomplete="off">`;
  R(`<div class="ex"><div class="g" style="padding:18px"><div class="bar" style="margin:0 0 8px">${logo(30)}<b>${esc(CFG.nama_ujian||'')}</b><small>${esc(CFG.nama_sekolah)}</small><button class="b2" data-a="keluarUjian" style="margin-left:auto;padding:6px 12px">🚪 Keluar</button></div><div class="who">👤 <b>${esc(X.nama||'')}</b>${(X.mapel||X.judul)?' &nbsp;·&nbsp; 📘 '+esc(X.mapel||X.judul):''}</div><div class="bar" style="justify-content:space-between;margin-top:0"><b>Soal ${X.i+1} dari ${X.L.length} <span class="bdg">${TIPE[q.tipe]}</span></b><b class="mo" id="tm2"></b></div>
  <div class="qb"><div style="white-space:pre-wrap;font-size:16px">${esc(q.teks)}</div>${q.gambar?`<img class="qi" src="${esc(q.gambar)}">`:''}${q.tipe=='pgk'?'<small>Pilih satu atau lebih jawaban</small>':''}${body}</div>
